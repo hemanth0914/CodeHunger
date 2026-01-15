@@ -49,7 +49,7 @@ Sometimes a domain does not point directly to an IP address. Instead, it points 
 
 Before any data is sent, a secure and reliable connection must be established.
 
-**TCP Handshake**
+*TCP Handshake*
 
 The browser and server perform a three-way handshake:
 
