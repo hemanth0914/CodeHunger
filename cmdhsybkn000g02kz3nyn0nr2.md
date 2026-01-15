@@ -3,86 +3,180 @@ title: "How Browsers Load a Website: From URL to Page Display"
 datePublished: Thu Jul 24 2025 19:45:36 GMT+0000 (Coordinated Universal Time)
 cuid: cmdhsybkn000g02kz3nyn0nr2
 slug: how-browsers-load-a-website-from-url-to-page-display
-tags: browsers, url
+tags: browsers, system-design, url
 
 ---
 
-Ever wondered what happens when you enter a URL on the browser and hit ENTER. What’s happening in the background. How are we able to see the webpage with rich contents.  
-  
-Let me explain step by step process how this happens.
+Ever wondered what happens when you enter a URL on the browser and hit ENTER. What’s happening in the background. How are we able to see the webpage with rich contents.
 
-1. *URL Parsing:*
-    
-    *You type* [*https://codehunger.hashnode.dev/seamless-streaming-the-magic-of-adaptive-bitrate-technology*](https://codehunger.hashnode.dev/seamless-streaming-the-magic-of-adaptive-bitrate-technology) *in the browser*
-    
-    *In this URL,*
-    
-    * *Scheme:* `https://`
-        
-        *HTTPS stands for Hypertext Transfer Protocol Secure. This tells the browser to make a connection to the server using TLS(Transport Layer Security). TLS is encryption protocol to secure communication over the Internet. The data exchanged in between the browser and the server will be encrypted.*
-        
-    
-    * **Domain:** `codehunger.hashnode.dev`
-        
-        This is the domain name. It points to the specific IP address of the server.
-        
-    * **Path:** `seamless-streaming-the-magic-of-adaptive-bitrate-technology`
-        
-        This is the path on the server to the requested resource.
-        
-2. Browser looks up IP Address for the domain(DNS lookup)
-    
-    Browser need to find the IP address of the server hosting the website using the domain. First browser checks it’s own cache, the OS cache, a local network cache at our router, a DNS Server cache at our ISP. If browser still can’t find the IP Address, the DNS server at the ISP does a recursive DNS lookup until it is found.
-    
-3. TCP Connection with server
-    
-    Packets are sent from client browser through the router, ISP, through an internet exchange of ISP’s using TCP(Tranmission Control Protocol) to find the server with the IP Address to connect to. But this is not efficient
-    
-    Instead many websites use CDN to cache static and dynamic content closer to the browser.  
-    The CDN is a geographically distributed network of servers that cache and serve content closer to the user. So when CDN comes into play, the domain points to a CDN Endpoint. DNS returns IP Address of a nearby CDN Edge server based on user’s location. CDN uses <mark>Any Cast routing</mark> to direct the user to closest server geographically for faster access
-    
-    Once the browser finds the server, it establishes a TCP connection with the server and if HTTPS is being used, a TLS handshake takes place to secure the communication.
-    
-    * Browser and server agree on encryption keys and algorithms.
-        
-    * Server sends its SSL certificate for verification.
-        
-    * A secure encrypted connection is established.
-        
-4. Browser sends a HTTP request
-    
-    The request line looks like this
-    
-    `GET /seamless-streaming-the-magic-of-adaptive-bitrate-technology HTTP 1.1`
-    
-    It contains the following
-    
-    * A request method: GET, POST, PUT, etc.
-        
-    * The path, pointing to requested resources
-        
-    * HTTP version
-        
-5. Server processes the request
-    
-    Server received the request and then runs the backend logic to generate a response
-    
-    Usually
-    
-    * A status line
-        
-    * Response headers, telling the browser how to handle the response
-        
-    * Requested resources, either HTML, JS, CSS, image files, or data
-        
-6. Browser renders the content
-    
-    Once browser has received the response, it inspects the headers on how to render the resource. The `Content-type` header tells the browser what type of resource it received. Let’s say HTML, the browser knows what to do with HTML. So it parses the HTML and it makes additional requests to get JS, CSS, images and Data. The DOM is built, CSS is applied and JavaScript is executed. Finally page will be displayed.
-    
-    ### Without CDN
-    
-    `URL → DNS → TCP → TLS → HTTP Request → Server → HTTP Response → HTML → Render`
-    
-    ### With CDN
-    
-    `User --> DNS --> CDN Edge (cache hit?) --> [maybe] Origin --> Response --> Browser`
+What Really Happens When You Type a URL and Press Enter?
+
+A common answer is: “The browser talks to the server.”
+
+While not incorrect, this explanation is shallow.
+
+In reality, when a user enters a URL, they are requesting a resource, and that request passes through multiple specialized systems, each responsible for a specific task. Modern internet architectures—especially those using AWS, Cloudflare, or similar cloud platforms—are built as layered systems designed for scalability, security, and reliability.
+
+Let’s walk through the process step by step.
+
+⸻
+
+**Step 1: DNS Resolution – Finding the Address**
+
+Computers do not understand domain names like [google.com](http://google.com) or [facebook.com](http://facebook.com). They communicate using IP addresses.
+
+When a user enters a URL such as [https://facebook.com](https://facebook.com):
+
+1\. The browser first asks the operating system if it already knows the IP address (via local cache).
+
+2\. If not, the OS queries a DNS resolver (commonly Google DNS at 8.8.8.8).
+
+3\. The resolver follows the DNS hierarchy:
+
+• Root servers direct the request to the correct TLD server.
+
+• TLD servers (e.g., .com) identify the authoritative server.
+
+• Authoritative DNS servers return the final IP address.
+
+*Why CNAME Flattening Matters*
+
+Sometimes a domain does not point directly to an IP address. Instead, it points to another domain using a CNAME record. Without flattening, DNS resolution would require multiple lookups. CNAME flattening resolves these indirections in advance and returns a single final IP address, reducing latency and improving performance.
+
+⸻
+
+**Step 2: TCP and TLS Handshake – Establishing Trust**
+
+Before any data is sent, a secure and reliable connection must be established.
+
+**TCP Handshake**
+
+The browser and server perform a three-way handshake:
+
+• SYN (client asks to connect)
+
+• SYN-ACK (server agrees)
+
+• ACK (client confirms)
+
+This establishes a reliable communication channel.
+
+*TLS Handshake*
+
+TLS ensures secure communication by:
+
+• Verifying the server’s identity
+
+• Agreeing on encryption algorithms
+
+• Exchanging encryption keys
+
+In modern systems, this handshake typically happens at the CDN or Load Balancer, not at the application server.
+
+⸻
+
+**Step 3: CDN – The Internet Edge**
+
+The request usually reaches a Content Delivery Network (CDN) first.
+
+*The CDN:*
+
+• Terminates TLS (in most architectures)
+
+• Performs WAF checks (SQL injection, XSS, bot detection)
+
+• Applies rate limiting and DDoS protection
+
+*Caching*
+
+If the request is for a static asset (images, CSS, JavaScript), the CDN serves it immediately.
+
+If the request is for dynamic data (APIs), it is forwarded downstream.
+
+⸻
+
+**Step 4: Load Balancer – Traffic Control**
+
+After the CDN, the request reaches the Load Balancer inside a private cloud network (VPC).
+
+The Load Balancer:
+
+• Decrypts traffic if TLS termination happens here
+
+• Inspects headers, paths, and hostnames
+
+• Determines which backend service should handle the request
+
+• Routes traffic only to healthy instances
+
+This layer enables horizontal scaling and fault tolerance.
+
+⸻
+
+**Step 5: Kubernetes – Running the Application**
+
+Behind the Load Balancer is typically a Kubernetes cluster.
+
+Traffic flows as follows:
+
+• Ingress Controller routes the request based on path or hostname
+
+• Service selects a healthy Pod
+
+• Pod runs the application code
+
+Pods are ephemeral and disposable; Kubernetes continuously replaces failed instances to maintain availability.
+
+⸻
+
+**Step 6: Database Access – Retrieving State**
+
+Applications are generally stateless, so persistent data is stored in databases.
+
+The application:
+
+• Retrieves a connection from a connection pool
+
+• Executes queries against a primary or replica database
+
+• Returns the result to the application logic
+
+Connection pooling avoids the overhead of creating new database connections for every request.
+
+⸻
+
+**Step 7: The Return Path – Sending the Response**
+
+The response travels back through the same layers:
+
+• Application → Service → Ingress → Load Balancer
+
+• Load Balancer may compress the response
+
+• CDN may cache it
+
+• Data is encrypted and sent to the browser
+
+The browser then decrypts the response, interprets the returned data, and renders the resulting HTML or content for display to the user.
+
+⸻
+
+Key Takeaway
+
+When a user presses Enter, they are not talking to a single server. They are interacting with an ecosystem of systems:
+
+• DNS infrastructure
+
+• Encryption protocols
+
+• CDNs and WAFs
+
+• Load balancers
+
+• Kubernetes clusters
+
+• Databases
+
+Each layer exists because systems at internet scale must assume failure, latency, and malicious traffic. Modern architectures trade simplicity for resilience, security, and performance.
+
+Understanding this flow demonstrates strong system design fundamentals and is a cornerstone of backend and infrastructure engineering.
